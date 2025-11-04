@@ -101,9 +101,10 @@ FOREIGN KEY (product_id) REFERENCES products(id) ON UPDATE no action ON DELETE n
 
 // Basic read-only SQL guardrails for SQLite
 function validateAndPrepareQuery(inputQuery: string): string {
-  const query = inputQuery.trim();
+  // Remove trailing semicolons (common in SQL but harmless)
+  const query = inputQuery.trim().replace(/;+$/, '');
 
-  // Enforce single statement and disallow trailing semicolons
+  // Enforce single statement - reject if semicolon appears anywhere (indicates multiple statements)
   if (query.includes(";")) {
     throw new Error("Only single, semicolon-free SELECT statements are allowed.");
   }
