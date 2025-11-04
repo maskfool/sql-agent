@@ -1,8 +1,9 @@
-import { db } from './db';
+import { getDb } from './db';
 import { productsTable, salesTable } from './schema';
 
 export async function seed() {
     console.log('🌱 Seeding database...');
+    const db = getDb();
 
     // Insert products
     await db.insert(productsTable).values([
