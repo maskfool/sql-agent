@@ -1,7 +1,7 @@
 import { openai } from '@ai-sdk/openai';
 import { streamText, UIMessage, convertToModelMessages, tool, stepCountIs } from 'ai';
 import z from 'zod';
-import { getDb } from '@/db/db';
+import { getClient } from '@/db/db';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -62,14 +62,35 @@ FOREIGN KEY (product_id) REFERENCES products(id) ON UPDATE no action ON DELETE n
             query: z.string().describe('The SQL query to be ran'),
           }),
           execute: async ({ query }) => {
-            console.log("Querying database with query: ", query);
-            //make db call
-            //make sure you sanitise / validate check query 
-            // build guardrails to prevent malicious queries
-            const safeQuery = validateAndPrepareQuery(query);
-            const db = getDb();
-            return await db.run(safeQuery);
-            
+            try {
+              console.log("Querying database with query: ", query);
+              const safeQuery = validateAndPrepareQuery(query);
+              const client = getClient();
+              
+              // Use client.execute for SELECT queries - returns { columns, rows, columnTypes }
+              const result = await client.execute(safeQuery);
+              
+              return {
+                success: true,
+                columns: result.columns,
+                rows: result.rows,
+                columnTypes: result.columnTypes,
+                rowsAffected: result.rowsAffected ?? 0,
+                lastInsertRowid: result.lastInsertRowid ?? null,
+              };
+            } catch (error) {
+              console.error("Database error: ", error);
+              const errorMessage = error instanceof Error ? error.message : String(error);
+              return {
+                success: false,
+                error: errorMessage,
+                columns: [],
+                rows: [],
+                columnTypes: [],
+                rowsAffected: 0,
+                lastInsertRowid: null,
+              };
+            }
           },
         }),
       },
