@@ -1,10 +1,11 @@
 import { openai } from '@ai-sdk/openai';
 import { streamText, UIMessage, convertToModelMessages, tool, stepCountIs } from 'ai';
 import z from 'zod';
-import { db } from '@/db/db';
+import { getDb } from '@/db/db';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   const { messages }: { messages: UIMessage[] } = await req.json();
@@ -66,6 +67,7 @@ FOREIGN KEY (product_id) REFERENCES products(id) ON UPDATE no action ON DELETE n
             //make sure you sanitise / validate check query 
             // build guardrails to prevent malicious queries
             const safeQuery = validateAndPrepareQuery(query);
+            const db = getDb();
             return await db.run(safeQuery);
             
           },
